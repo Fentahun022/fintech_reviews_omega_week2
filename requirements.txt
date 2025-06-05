@@ -1,0 +1,22 @@
+pandas
+google-play-scraper
+# For Sentiment Analysis (choose one or more)
+transformers[torch] # For DistilBERT (PyTorch backend)
+# or transformers[tensorflow]
+nltk
+textblob
+vaderSentiment
+# For Thematic Analysis & NLP preprocessing
+scikit-learn
+spacy
+# python -m spacy download en_core_web_sm # Run this after installing spacy
+wordcloud
+# For Database
+cx_Oracle
+# psycopg2-binary # Fallback for PostgreSQL
+# For Visualization
+matplotlib
+seaborn
+# For development/testing (optional but good)
+jupyterlab
+pytest
