@@ -1,15 +1,30 @@
+# Python virtual environment
 .venv/
+
+# Python bytecode
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# macOS system files
 .DS_Store
+
+# Logs, databases, and runtime files
 *.log
 *.csv
 *.sqlite3
 *.db
+
+# Sensitive information
 credentials.py
+
+# Data directories
 data/raw/
 data/processed/
-bank_reviews_dump.sql 
-reports/*.pdf # If you generate PDFs from markdown or notebooks
+
+# SQL dump
+bank_reviews_dump.sql
+
+# Generated reports (PDFs from markdown or notebooks)
+reports/*.pdf
