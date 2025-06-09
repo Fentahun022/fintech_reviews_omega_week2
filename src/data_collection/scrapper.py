@@ -3,9 +3,10 @@ import pandas as pd
 from google_play_scraper import reviews_all, Sort, reviews
 import time
 import os
+
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import config 
+import config # Now it can find config.py
 
 def scrape_reviews_for_app(app_id, app_name, lang='en', country='et', min_reviews=400): # Changed country to 'et'
     """
@@ -17,10 +18,12 @@ def scrape_reviews_for_app(app_id, app_name, lang='en', country='et', min_review
     all_reviews_data = []
     
     try:
-      
+        # Attempt to get all reviews; this is often more efficient
+        # Note: reviews_all might still be limited by Google Play in some cases
+        # Using sort=Sort.NEWEST is good for recent feedback
         current_reviews = reviews_all(
             app_id,
-            sleep_milliseconds=500, 
+            sleep_milliseconds=500, # Be respectful, 0 can be too fast
             lang=lang,
             country=country,
             sort=Sort.NEWEST 
@@ -30,13 +33,21 @@ def scrape_reviews_for_app(app_id, app_name, lang='en', country='et', min_review
 
         if len(all_reviews_data) < min_reviews:
             print(f"reviews_all fetched {len(all_reviews_data)} reviews, which is less than {min_reviews}. Trying paginated fetching for more if needed.")
-            
-            if len(all_reviews_data) < min_reviews : 
+            # Fallback to paginated if not enough or if reviews_all has issues
+            # This part is more robust for reaching a specific number
+            # We need to manage continuation_token correctly.
+            # reviews_all does not provide continuation_token.
+            # So if reviews_all gets some, but not enough, we start paginated from scratch.
+            # Or, we can decide if reviews_all result is "good enough" or always paginate.
+            # For simplicity here, if reviews_all is less than min_reviews, we'll rely on the paginated logic below
+            # to try and get *up to* min_reviews.
+            # Let's clear and use paginated if reviews_all is insufficient:
+            if len(all_reviews_data) < min_reviews : # If reviews_all didn't get enough, paginated might get more specific count
                 print(f"Attempting paginated fetch to reach {min_reviews} for {app_name}")
-                all_reviews_data = [] 
+                all_reviews_data = [] # Reset if reviews_all wasn't enough and we want paginated control
                 continuation_token = None
                 count_fetched_paginated = 0
-                target_for_pagination = min_reviews 
+                target_for_pagination = min_reviews # Target this many from pagination
 
                 while count_fetched_paginated < target_for_pagination:
                     batch_to_fetch = min(200, target_for_pagination - count_fetched_paginated)
@@ -61,14 +72,16 @@ def scrape_reviews_for_app(app_id, app_name, lang='en', country='et', min_review
 
                         if not continuation_token or count_fetched_paginated >= target_for_pagination : 
                             break
-                        time.sleep(2) 
+                        time.sleep(2) # Be respectful to the server (increased sleep)
                     except Exception as e:
                         print(f"Error during paginated fetch for {app_name}: {e}")
                         break 
     except Exception as e:
         print(f"Could not scrape reviews for {app_id}: {e}")
-       
-        pass
+        # If reviews_all fails, all_reviews_data might be empty.
+        # We could add another paginated attempt here if desired.
+        # For now, we'll proceed with what we have or an empty DF.
+        pass # Let it proceed to df creation
 
     if not all_reviews_data:
         print(f"No reviews collected for {app_name}.")
@@ -76,6 +89,8 @@ def scrape_reviews_for_app(app_id, app_name, lang='en', country='et', min_review
 
     df = pd.DataFrame(all_reviews_data)
     
+    # **MODIFICATION: Include 'reviewId' and rename columns**
+    # Ensure all necessary columns exist, fill with None if not (though 'reviewId', 'content', 'score', 'at' should always be there)
     required_cols_from_scraper = ['reviewId', 'content', 'score', 'at', 'userName', 'thumbsUpCount', 'reviewCreatedVersion']
     for col in required_cols_from_scraper:
         if col not in df.columns:
@@ -105,6 +120,7 @@ def run_scraper():
 
     all_bank_reviews_list = []
     for bank_code, app_id in config.APP_IDS.items():
+        # Use proper name from config.APP_NAMES or default to bank_code
         bank_name_proper = config.APP_NAMES.get(bank_code, bank_code) 
 
         reviews_df = scrape_reviews_for_app(app_id, bank_name_proper, min_reviews=config.MIN_REVIEWS_PER_APP)
