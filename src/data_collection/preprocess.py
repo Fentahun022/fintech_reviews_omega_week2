@@ -1,4 +1,4 @@
-
+# scripts/preprocess.py
 import pandas as pd
 import os
 import re
@@ -12,6 +12,8 @@ def clean_text_basic(text):
     text = str(text)
     text = text.lower()  # Lowercase
     text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces with single
+    # Keep alphanumeric, whitespace, and basic punctuation useful for NLP.
+    # Removed emojis or special characters that might not render or process well.
     text = re.sub(r'[^\w\s\.\?\!\'\u1200-\u137F]', '', text) # Added Amharic unicode range
     text = text.strip()
     return text
@@ -20,10 +22,15 @@ def preprocess_reviews(df_raw):
     print(f"Initial number of reviews: {len(df_raw)}")
     df = df_raw.copy()
 
+    # Ensure essential columns are present
+    # Scraper should provide: review_id, review_text, rating, date, bank_name, source
+    # Others like user_name, thumbs_up_count, app_version are good to have.
     essential_cols = ['review_id', 'review_text', 'rating', 'date', 'bank_name', 'source']
     for col in essential_cols:
         if col not in df.columns:
             raise ValueError(f"Essential column '{col}' not found in raw data.")
+
+    # Handle missing essential data
     df.dropna(subset=['review_text', 'rating', 'review_id'], inplace=True) # review_id also crucial
     print(f"Reviews after dropping NA in text/rating/review_id: {len(df)}")
 
@@ -37,6 +44,7 @@ def preprocess_reviews(df_raw):
         df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
     except Exception as e:
         print(f"Warning: Could not parse all dates. Error: {e}. Check date column format.")
+        # Attempt to coerce errors, setting unparseable dates to NaT, then drop them
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
         df.dropna(subset=['date'], inplace=True)
         df['date'] = df['date'].dt.strftime('%Y-%m-%d')
