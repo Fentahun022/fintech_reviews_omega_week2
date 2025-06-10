@@ -14,7 +14,7 @@ def get_db_connection(db_config):
         return None
 
 def populate_banks_table(cursor, unique_banks):
-    """Inserts unique bank names into the BANKS table and returns a name-to-ID map."""
+    """Inserts unique bank names and returns a name-to-ID map."""
     bank_id_map = {}
     print("Populating BANKS table...")
     for bank_name in unique_banks:
@@ -29,20 +29,25 @@ def populate_banks_table(cursor, unique_banks):
     return bank_id_map
 
 def populate_reviews_table(cursor, df, bank_id_map):
-    """Prepares and inserts review data into the REVIEWS table."""
-    print("\nPopulating REVIEWS table...")
+    """Prepares and inserts review data into the REVIEWS table. Handles conflicts gracefully."""
+    print(f"\nPreparing to insert {len(df)} reviews into REVIEWS table...")
     df['bank_id'] = df['bank_name'].map(bank_id_map)
     df['review_date'] = pd.to_datetime(df['date'])
 
+    # Prepare data, ensuring no NaN values in text fields
     reviews_to_insert = list(df[[
         'review_id', 'bank_id', 'review_text', 'rating', 'review_date',
         'sentiment_label', 'sentiment_score_model', 'themes_str'
     ]].itertuples(index=False, name=None))
     
+    # This query is robust: it will not fail if a review_id already exists.
     query = """
         INSERT INTO REVIEWS (review_id, bank_id, review_text, rating, review_date, 
                              sentiment_label, sentiment_score, themes)
-        VALUES %s ON CONFLICT (review_id) DO NOTHING
+        VALUES %s 
+        ON CONFLICT (review_id) DO NOTHING
     """
     execute_values(cursor, query, reviews_to_insert)
+    
+    # cursor.rowcount will tell you how many rows were actually inserted in the last operation
     return cursor.rowcount
