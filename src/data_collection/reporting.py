@@ -44,7 +44,7 @@ def main():
         
     df = pd.read_csv(analyzed_file_path).fillna({'nlp_processed_text': ''})
     
-    viz_path = config.VISUALIZATIONS_DIR
+    viz_path = os.path.join(project_root, config.VISUALIZATIONS_DIR)
     os.makedirs(viz_path, exist_ok=True)
     
     setup_plotting_style()
