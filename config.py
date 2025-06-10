@@ -31,14 +31,14 @@ ORACLE_DB_CONFIG = {
 # Option 2: PostgreSQL (ensure psycopg2-binary is installed)
 POSTGRES_DB_CONFIG = {
     "dbname": "bank_reviews",
-    "user": "your_postgres_user",
-    "password": "your_postgres_password",
+    "user": "postgres",
+    "password": "postgres",
     "host": "localhost",
     "port": "5432"
 }
 # Choose which DB config to use in db_loader.py, or add logic to select
-ACTIVE_DB_CONFIG = ORACLE_DB_CONFIG # or POSTGRES_DB_CONFIG
-DB_TYPE = "ORACLE" # or "POSTGRES"
+ACTIVE_DB_CONFIG = POSTGRES_DB_CONFIG
+DB_TYPE = "POSTGRES"
 
 
 # --- Directory Paths ---
